@@ -10,13 +10,7 @@ def get_snowflake_session():
         return st.connection("snowflake").session()
 
 def get_logo():
-    try:
-        session = get_active_session()
-        logo_data = session.file.get_stream('@"ML_DATASETS"."DATA"."PIC"/comply logo.jpg')
-        return logo_data.read()
-    except:
-        # Fallback URL if stage file isn't found
-        return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
+    return "comply_logo.jpg"
 
 # --- 3. PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="ComplyWise Login")
