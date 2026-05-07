@@ -11,7 +11,7 @@ def get_snowflake_session():
 
 # --- 2. LOGO FUNCTION ---
 def get_logo():
-    return "comply_logo.jpg"
+    return "comply logo.jpg"
 
 # --- 3. PAGE CONFIG ---
 st.set_page_config(
