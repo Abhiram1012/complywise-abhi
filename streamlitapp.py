@@ -31,7 +31,6 @@ if "current_user" not in st.session_state:
 # 3. ASSETS (LOGO)
 # ---------------------------------------------------------
 def get_logo():
-    # Fallback check for GitHub/Local
     if os.path.exists("comply logo.jpg"):
         return "comply logo.jpg"
     return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
@@ -48,83 +47,79 @@ USER_DATABASE = [
 # 5. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
+    # CUSTOM CSS TO REMOVE TOP BOX AND ALIGN CARD
     st.markdown("""
         <style>
+        /* Hide the top Streamlit header/padding where that box usually sits */
+        header {visibility: hidden;}
+        .main .block-container {
+            padding-top: 2rem !important;
+            padding-bottom: 0rem !important;
+        }
+
         .stApp {
             background-color: #f4f7f9;
         }
-        
-        /* REMOVE EXTRA BOX/SPACE ABOVE LOGO */
-        [data-testid="stVerticalBlock"] > div:has(div.login-card) {
-            gap: 0px !important;
-        }
 
-        /* Login Card Container */
+        /* Login Card with Border */
         .login-card {
             background-color: white;
-            padding: 40px 45px;
+            padding: 40px;
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
-            margin-top: 0px; /* Reset margin */
-        }
-        
-        /* Tighten space between logo and form */
-        .stImage {
-            margin-bottom: -20px !important;
+            margin-top: 0px;
         }
 
-        /* Blue Information Panel */
+        /* Blue Panel */
         .blue-panel {
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
             padding: 60px 50px;
             border-radius: 20px;
             color: white;
-            min-height: 520px;
+            min-height: 550px;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
         }
 
-        /* Button Styling */
+        /* Input Styling */
+        .stTextInput input {
+            border: 1px solid #d1d9e0 !important;
+            border-radius: 8px !important;
+        }
+
+        /* Primary Button */
         div.stButton > button:first-child {
             background-color: #007bff;
             color: white;
             border-radius: 8px;
-            border: none;
             font-weight: 600;
-        }
-        
-        .stTextInput input {
-            border: 1px solid #d1d9e0 !important;
-            border-radius: 8px !important;
         }
         </style>
     """, unsafe_allow_html=True)
 
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
-    # --- LEFT SIDE: LOGIN CARD ---
     with col_left:
-        # Start the card container
+        # We wrap the card start here
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        # Logo inside the card
+        # LOGO
         st.image(get_logo(), width=280)
         
-        st.write("---") # Thin divider for spacing
+        st.write("---") # Visual separator
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
             
-            input_user = st.text_input("User ID", placeholder="Enter Username").strip()
-            input_pass = st.text_input("Password", type="password", placeholder="Enter Password").strip()
+            input_user = st.text_input("User ID", placeholder="Enter Username", key="user_in").strip()
+            input_pass = st.text_input("Password", type="password", placeholder="Enter Password", key="pass_in").strip()
 
-            c1, c2 = st.columns([1.5, 1])
+            c1, c2 = st.columns([1.3, 1])
             with c2:
-                if st.button("Forgot Password?", key="fg_btn", type="secondary"):
+                if st.button("Forgot Password?", key="fg_btn"):
                     st.session_state.view = "forgot"
                     st.rerun()
 
@@ -138,22 +133,21 @@ def show_login_page():
                     st.error("Invalid credentials.")
 
         elif st.session_state.view == "forgot":
-            st.subheader("Account Support")
+            st.subheader("Support")
             st.info("Email: **support@info.comply.com**")
-            if st.button("← Back to Sign In"):
+            if st.button("← Back"):
                 st.session_state.view = "login"
                 st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- RIGHT SIDE: BLUE INFO PANEL ---
     with col_right:
         st.markdown("""
             <div class="blue-panel">
-                <h1 style='color:white; font-size:42px; line-height:1.2; margin-bottom:20px;'>
+                <h1 style='color:white; font-size:42px; line-height:1.2;'>
                     Real-time Clinical, Financial, and Compliance Integrity
                 </h1>
-                <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
+                <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic; margin-top:20px;'>
                     Preventing risk, fraud, and revenue leakage through continuous data validation.
                 </p>
                 <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
@@ -166,23 +160,16 @@ def show_login_page():
         """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 6. UI: MAIN APPLICATION (POST-LOGIN)
+# 6. MAIN APPLICATION
 # ---------------------------------------------------------
 def show_main_app():
     st.sidebar.image(get_logo(), width=150)
-    st.sidebar.divider()
-    st.sidebar.write(f"Logged in as: **{st.session_state.current_user}**")
-    
-    if st.sidebar.button("Log Out", use_container_width=True):
+    if st.sidebar.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
-
     st.title("❄️ Dashboard")
     st.success(f"Welcome back, {st.session_state.current_user}!")
 
-# ---------------------------------------------------------
-# 7. EXECUTION LOGIC
-# ---------------------------------------------------------
 if not st.session_state.logged_in:
     show_login_page()
 else:
