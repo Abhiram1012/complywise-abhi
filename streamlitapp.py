@@ -1,21 +1,35 @@
 import streamlit as st
 
-# --- 1. SESSION INITIALIZATION (Must be first) ---
-# This ensures 'session' is available throughout the app
+# --- 1. SESSION INITIALIZATION ---
 def get_snowflake_session():
     try:
-        # First: Try the native Snowflake environment (SiS)
         from snowflake.snowpark.context import get_active_session
         return get_active_session()
-    except ImportError:
-        # Second: Fallback for Streamlit Cloud/Local deployment
-        # This uses your secrets.toml or Streamlit Cloud connection settings
+    except Exception:
+        # If running outside Snowflake UI (e.g., local or Streamlit Cloud)
         return st.connection("snowflake").session()
 
-# --- 2. PAGE CONFIG ---
+# --- 2. THE LOGO FIX (Scoped URL Method) ---
+def get_logo():
+    try:
+        session = get_snowflake_session()
+        
+        # NOTE: If your file has a space like 'comply logo.jpg', 
+        # use double quotes inside the single quotes for the filename.
+        stage_path = '@"ML_DATASETS"."DATA"."PIC"'
+        file_name = "comply logo.jpg"
+        
+        # This generates a temporary URL that Snowflake uses to serve images safely
+        scoped_url_df = session.sql(f"SELECT BUILD_SCOPED_FILE_URL({stage_path}, '{file_name}')").collect()
+        return scoped_url_df[0][0]
+    except Exception as e:
+        # If Snowflake fails, the web backup URL is used automatically
+        return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
+
+# --- 3. PAGE CONFIG ---
 st.set_page_config(layout="wide", page_title="ComplyWise Login")
 
-# --- 3. DATABASE & STATE ---
+# --- 4. DATABASE & STATE ---
 USER_DATABASE = [
     {"userid": "admin", "password": "admin123"},
     {"userid": "abhiram", "password": "snow123"}
@@ -26,23 +40,7 @@ if "logged_in" not in st.session_state:
 if "view" not in st.session_state:
     st.session_state.view = "login"
 
-def get_logo():
-    try:
-        session = get_snowflake_session()
-        # This generates a temporary authorized URL for the image
-        # IMPORTANT: Ensure the path is EXACTLY as seen in 'LIST @database.schema.stage'
-        relative_path = "comply logo.jpg" 
-        stage_path = '@"ML_DATASETS"."DATA"."PIC"'
-        
-        # SQL to get a scoped URL
-        sql = f"SELECT BUILD_SCOPED_FILE_URL({stage_path}, '{relative_path}')"
-        scoped_url = session.sql(sql).collect()[0][0]
-        return scoped_url
-    except Exception as e:
-        # If Snowflake stage fails, use the web fallback so the app doesn't look broken
-        return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
-
-# --- 4. UI LAYOUT ---
+# --- 5. UI LAYOUT ---
 def show_login_page():
     st.markdown("""
         <style>
@@ -65,7 +63,10 @@ def show_login_page():
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
-        st.image(get_logo(), width=300)
+        # Display Logo
+        logo_to_display = get_logo()
+        st.image(logo_to_display, width=300)
+        
         st.write("##")
 
         if st.session_state.view == "login":
@@ -109,11 +110,8 @@ def show_login_page():
             </div>
         """, unsafe_allow_html=True)
 
-# --- 5. MAIN APP ---
+# --- 6. MAIN APP ---
 def show_main_app():
-    # Make session available here
-    session = get_snowflake_session()
-    
     st.sidebar.image(get_logo(), width=150)
     st.sidebar.write(f"Logged in: {st.session_state.current_user}")
     if st.sidebar.button("Logout"):
@@ -121,9 +119,9 @@ def show_main_app():
         st.rerun()
 
     st.title("❄️ Dashboard")
-    st.success(f"Successfully logged in as {session.get_current_user()}")
+    st.success("Successfully logged into ComplyWise!")
 
-# --- 6. EXECUTION LOGIC ---
+# --- 7. EXECUTION ---
 if not st.session_state.logged_in:
     show_login_page()
 else:
