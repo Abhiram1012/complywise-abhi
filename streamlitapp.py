@@ -9,21 +9,13 @@ def get_snowflake_session():
         # If running outside Snowflake UI (e.g., local or Streamlit Cloud)
         return st.connection("snowflake").session()
 
-# --- 2. THE LOGO FIX (Scoped URL Method) ---
 def get_logo():
     try:
-        session = get_snowflake_session()
-        
-        # NOTE: If your file has a space like 'comply logo.jpg', 
-        # use double quotes inside the single quotes for the filename.
-        stage_path = '@"ML_DATASETS"."DATA"."PIC"'
-        file_name = "comply logo.jpg"
-        
-        # This generates a temporary URL that Snowflake uses to serve images safely
-        scoped_url_df = session.sql(f"SELECT BUILD_SCOPED_FILE_URL({stage_path}, '{file_name}')").collect()
-        return scoped_url_df[0][0]
-    except Exception as e:
-        # If Snowflake fails, the web backup URL is used automatically
+        session = get_active_session()
+        logo_data = session.file.get_stream('@"ML_DATASETS"."DATA"."PIC"/comply logo.jpg')
+        return logo_data.read()
+    except:
+        # Fallback URL if stage file isn't found
         return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
 
 # --- 3. PAGE CONFIG ---
