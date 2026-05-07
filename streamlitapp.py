@@ -31,15 +31,9 @@ if "current_user" not in st.session_state:
 # ---------------------------------------------------------
 # 3. ASSETS (LOGO)
 # ---------------------------------------------------------
+# --- LOGO FUNCTION ---
 def get_logo():
-    # Looks for file in your GitHub root folder
-    local_path = "comply_logo.jpg"
-    if os.path.exists(local_path):
-        return local_path
-    else:
-        # Guaranteed fallback to prevent MediaFileStorageError
-        return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
-
+    return "comply logo.jpg"
 # ---------------------------------------------------------
 # 4. USER DATABASE
 # ---------------------------------------------------------
