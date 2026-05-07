@@ -29,10 +29,13 @@ if "view" not in st.session_state:
 def get_logo():
     try:
         session = get_snowflake_session()
-        logo_data = session.file.get_stream('@"ML_DATASETS"."DATA"."PIC"/comply logo.jpg')
+        # 1. Use the EXACT path from your LIST command
+        # 2. decompress=False is vital for image files in stages
+        logo_data = session.file.get_stream('@"ML_DATASETS"."DATA"."PIC"/comply logo.jpg', decompress=False)
         return logo_data.read()
-    except Exception:
-        # Fallback URL if stage file isn't found
+    except Exception as e:
+        # This will show you the error in the app so we can fix it
+        # st.sidebar.error(f"Logo Error: {e}") 
         return "https://i.ibb.co/Xz9R94p/complywise-logo.png"
 
 # --- 4. UI LAYOUT ---
