@@ -34,42 +34,41 @@ USER_DATABASE = [
 # 4. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # Targeted CSS to remove all top boxes and fix alignment
+    # Targeted CSS to remove the empty space at the top of the card
     st.markdown("""
         <style>
-        /* 1. COMPLETELY HIDE THE TOP WHITE BAR (Streamlit Header) */
+        /* 1. Hide the global Streamlit header */
         header, [data-testid="stHeader"] {
             visibility: hidden;
-            height: 0% !important;
             display: none !important;
         }
         
-        /* 2. REMOVE TOP PADDING FROM THE APP CONTAINER */
+        /* 2. Remove padding from the very top of the app */
         .block-container {
-            padding-top: 1rem !important;
-            margin-top: 0rem !important;
+            padding-top: 2rem !important;
         }
 
         .stApp {
             background-color: #f4f7f9;
         }
 
-        /* 3. LOGIN CARD FIX */
+        /* 3. The Login Card: Reducing TOP PADDING from 40px to 15px */
         .login-card {
             background-color: white;
-            padding: 40px;
+            padding: 15px 45px 45px 45px; 
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
-            margin-top: 0px; /* Reset this */
+            margin-top: 0px;
         }
 
-        /* 4. LOGO ALIGNMENT */
+        /* 4. Targeting the Logo: Removing Streamlit's default top margin */
         [data-testid="stImage"] {
             margin-top: -10px !important;
+            margin-bottom: 0px !important;
         }
 
-        /* 5. BLUE PANEL FIX (Removed the margin that caused it to drop) */
+        /* 5. The Blue Panel: Ensuring it stays aligned with the card */
         .blue-panel {
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
@@ -81,7 +80,7 @@ def show_login_page():
             flex-direction: column;
             justify-content: center;
             box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
-            margin-top: 0px; /* Fixed: reset to 0 to align with top */
+            margin-top: 0px;
         }
 
         div.stButton > button:first-child {
@@ -97,13 +96,14 @@ def show_login_page():
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
+        # Start the card
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        # Display Logo
+        # Display Logo (sitting tight at the top now)
         st.image(get_logo(), width=280)
         
-        # Spacer
-        st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+        # Small spacer after logo
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
@@ -133,6 +133,7 @@ def show_login_page():
                 st.session_state.view = "login"
                 st.rerun()
         
+        # Close the card
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
