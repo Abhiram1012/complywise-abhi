@@ -141,24 +141,6 @@ def show_login_page():
         
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # --- RIGHT SIDE: BLUE INFO PANEL ---
-    with col_right:
-        st.markdown("""
-            <div class="blue-panel">
-                <h1 style='color:white; font-size:42px; line-height:1.2; margin-bottom:20px;'>
-                    Real-time Clinical, Financial, and Compliance Integrity
-                </h1>
-                <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
-                    Preventing risk, fraud, and revenue leakage through continuous data validation.
-                </p>
-                <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
-                    <h2 style='color:white;'>ComplyWise Flow Intelligence</h2>
-                    <p style='font-size:18px; color:#d9e6ff;'>
-                        Data → Processing → Insights → Secure Flow → Output
-                    </p>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
 
     # --- RIGHT SIDE: BLUE INFO PANEL ---
     with col_right:
