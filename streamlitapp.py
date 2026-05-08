@@ -47,7 +47,7 @@ def get_base64_of_bin_file(bin_file):
         return ""
 
 def send_external_email(target_email, otp_code):
-    """Sends email via GoDaddy/Office 365 SMTP."""
+    """Sends email via GoDaddy / Microsoft 365 SMTP."""
     try:
         smtp_user = st.secrets["email"]["smtp_user"]
         smtp_pass = st.secrets["email"]["smtp_pass"]
@@ -75,10 +75,9 @@ def send_external_email(target_email, otp_code):
         """
         msg.attach(MIMEText(body, "html"))
 
-        # GoDaddy/M365 requires STARTTLS
+        # GoDaddy/M365 requires STARTTLS encryption
         server = smtplib.SMTP(smtp_server, smtp_port)
-        server.set_debuglevel(0)
-        server.starttls()  # Secure the connection
+        server.starttls() 
         server.login(smtp_user, smtp_pass)
         server.send_message(msg)
         server.quit()
@@ -123,8 +122,13 @@ def show_login_page():
 
             if st.button("Sign In", type="primary", use_container_width=True):
                 session = get_snowflake_session()
+                # PRE-CLEANING VARIABLES TO AVOID SYNTAX ERRORS
                 clean_uid = u_input.strip().replace("'", "''")
-                user_record = session.sql(f"SELECT * FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE (USERID = '{clean_uid}' OR EMAIL = '{clean_uid}') AND PASSWORD = '{u_pass.replace("'", "''")}'").collect()
+                clean_pass = u_pass.replace("'", "''")
+                
+                query = f"SELECT * FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE (USERID = '{clean_uid}' OR EMAIL = '{clean_uid}') AND PASSWORD = '{clean_pass}'"
+                user_record = session.sql(query).collect()
+                
                 if len(user_record) > 0:
                     st.session_state.logged_in = True
                     st.rerun()
@@ -144,6 +148,7 @@ def show_login_page():
                 if st.button("Send OTP", type="primary", use_container_width=True):
                     session = get_snowflake_session()
                     clean_email = email_target.strip().replace("'", "''")
+                    
                     exists = session.sql(f"SELECT 1 FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE EMAIL = '{clean_email}'").collect()
                     
                     if len(exists) > 0:
@@ -157,6 +162,7 @@ def show_login_page():
                         st.error("Email not found")
 
             elif st.session_state.reset_step == "enter_otp":
+                st.info(f"OTP sent to {st.session_state.target_email}")
                 otp_in = st.text_input("Enter 4-Digit OTP")
                 if st.button("Verify OTP", type="primary"):
                     if otp_in == st.session_state.otp_code:
@@ -169,7 +175,10 @@ def show_login_page():
                 new_p = st.text_input("New Password", type="password")
                 if st.button("Update Password", type="primary"):
                     session = get_snowflake_session()
-                    session.sql(f"UPDATE ML_DATASETS.DATA.COMPLYWISE_USERS SET PASSWORD = '{new_p.replace("'", "''")}' WHERE EMAIL = '{st.session_state.target_email.replace("'", "''")}'").collect()
+                    clean_new_p = new_p.replace("'", "''")
+                    clean_email = st.session_state.target_email.replace("'", "''")
+                    
+                    session.sql(f"UPDATE ML_DATASETS.DATA.COMPLYWISE_USERS SET PASSWORD = '{clean_new_p}' WHERE EMAIL = '{clean_email}'").collect()
                     st.success("Updated!")
                     time.sleep(1)
                     st.session_state.view = "login"
@@ -191,6 +200,7 @@ if not st.session_state.logged_in:
     show_login_page()
 else:
     st.title("Main Dashboard")
+    st.success("Welcome to ComplyWise")
     if st.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
