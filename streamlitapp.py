@@ -1,4 +1,5 @@
 import streamlit as st
+import base64
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION
@@ -20,63 +21,66 @@ if "current_user" not in st.session_state:
     st.session_state.current_user = ""
 
 # ---------------------------------------------------------
-# 3. ASSETS & DATABASE
+# 3. ASSETS (IMAGE CONVERSION TO BYTES)
 # ---------------------------------------------------------
-def get_logo():
-    return "comply logo.jpg"
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
+# ---------------------------------------------------------
+# 4. USER DATABASE
+# ---------------------------------------------------------
 USER_DATABASE = [
     {"userid": "admin", "password": "admin123"},
     {"userid": "abhiram", "password": "snow123"}
 ]
 
 # ---------------------------------------------------------
-# 4. UI: LOGIN PAGE
+# 5. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # Targeted CSS to remove that top white box inside the card
-    st.markdown("""
+    # Load logo as base64 to inject directly into HTML
+    try:
+        logo_base64 = get_base64_of_bin_file("comply logo.jpg")
+    except:
+        logo_base64 = ""
+
+    st.markdown(f"""
         <style>
-        /* 1. Hide Streamlit's default top toolbar */
-        header, [data-testid="stHeader"] {
+        /* Hide Streamlit Header */
+        header, [data-testid="stHeader"] {{
             visibility: hidden;
             display: none !important;
-        }
+        }}
         
-        /* 2. Pull the whole app content up */
-        .block-container {
+        .block-container {{
             padding-top: 2rem !important;
-        }
+        }}
 
-        .stApp {
+        .stApp {{
             background-color: #f4f7f9;
-        }
+        }}
 
-        /* 3. LOGIN CARD: Reduced top padding to 10px */
-        .login-card {
+        /* The Login Card */
+        .login-card {{
             background-color: white;
-            padding: 10px 45px 45px 45px; 
+            padding: 40px;
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
-            margin-top: 0px;
-        }
-
-        /* 4. THE FIX: Pull the image up into the empty space */
-        [data-testid="stImage"] {
-            margin-top: -25px !important;
-            margin-bottom: -10px !important;
-        }
-        
-        /* Remove any potential ghost margins from the column */
-        [data-testid="column"] {
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
-        }
+        }}
 
-        /* 5. BLUE PANEL: Stay aligned with card */
-        .blue-panel {
+        /* Logo styling to remove all ghost boxes */
+        .custom-logo {{
+            width: 280px;
+            margin-bottom: 25px;
+            display: block;
+        }}
+
+        .blue-panel {{
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
             padding: 60px 50px;
@@ -87,34 +91,30 @@ def show_login_page():
             flex-direction: column;
             justify-content: center;
             box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
-            margin-top: 0px;
-        }
+        }}
 
-        div.stButton > button:first-child {
+        div.stButton > button:first-child {{
             background-color: #007bff;
             color: white;
             border-radius: 8px;
             border: none;
             font-weight: 600;
-        }
+        }}
         </style>
     """, unsafe_allow_html=True)
 
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
-        # Open card
-        st.markdown('<div class="login-card">', unsafe_allow_html=True)
-        
-        # Logo - it will now sit at the very top of the card
-        st.image(get_logo(), width=280)
-        
-        # Clean spacer between logo and "Sign In"
-        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        # We wrap the logo in the SAME markdown as the card start
+        # This prevents Streamlit from inserting an empty container in between
+        st.markdown(f'''
+            <div class="login-card">
+                <img src="data:image/jpeg;base64,{logo_base64}" class="custom-logo">
+        ''', unsafe_allow_html=True)
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
-            
             input_user = st.text_input("User ID", placeholder="Enter Username").strip()
             input_pass = st.text_input("Password", type="password", placeholder="Enter Password").strip()
 
@@ -140,7 +140,6 @@ def show_login_page():
                 st.session_state.view = "login"
                 st.rerun()
         
-        # Close card
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
@@ -152,23 +151,8 @@ def show_login_page():
                 <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
                     Preventing risk, fraud, and revenue leakage through continuous data validation.
                 </p>
-                <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
-                    <h2 style='color:white;'>ComplyWise Flow Intelligence</h2>
-                    <p style='font-size:18px; color:#d9e6ff;'>
-                        Data → Processing → Insights → Secure Flow → Output
-                    </p>
-                </div>
             </div>
         """, unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# 5. UI: MAIN APPLICATION (POST-LOGIN)
-# ---------------------------------------------------------
-def show_main_app():
-    st.title("❄️ ComplyWise Dashboard")
-    if st.button("Log Out"):
-        st.session_state.logged_in = False
-        st.rerun()
 
 # ---------------------------------------------------------
 # 6. EXECUTION LOGIC
@@ -176,4 +160,7 @@ def show_main_app():
 if not st.session_state.logged_in:
     show_login_page()
 else:
-    show_main_app()
+    st.title("ComplyWise Dashboard")
+    if st.button("Log Out"):
+        st.session_state.logged_in = False
+        st.rerun()
