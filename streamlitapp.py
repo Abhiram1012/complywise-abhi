@@ -46,7 +46,16 @@ USER_DATABASE = [
 # 5. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # Custom CSS for Pic 1 Style
+    # 1. Page Configuration (Must be first)
+    st.set_page_config(layout="wide", page_title="ComplyWise | Secure Login")
+
+    # 2. Session State Initialization
+    if 'view' not in st.session_state:
+        st.session_state.view = "login"
+    if 'logged_in' not in st.session_state:
+        st.session_state.logged_in = False
+
+    # 3. Custom CSS (Version 1 Style)
     st.markdown("""
         <style>
         .stApp {
@@ -81,6 +90,7 @@ def show_login_page():
             border-radius: 8px;
             border: none;
             font-weight: 600;
+            padding: 0.5rem 1rem;
         }
         .stTextInput input {
             border: 1px solid #d1d9e0 !important;
@@ -89,7 +99,7 @@ def show_login_page():
         </style>
     """, unsafe_allow_html=True)
 
-    # Split Screen Layout
+    # 4. Split Screen Layout
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     # --- LEFT SIDE: LOGIN CARD ---
@@ -117,6 +127,7 @@ def show_login_page():
                 if user_match:
                     st.session_state.logged_in = True
                     st.session_state.current_user = input_user
+                    st.success("Login Successful!")
                     st.rerun()
                 else:
                     st.error("Invalid credentials. Please try again.")
@@ -129,6 +140,25 @@ def show_login_page():
                 st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
+
+    # --- RIGHT SIDE: BLUE INFO PANEL ---
+    with col_right:
+        st.markdown("""
+            <div class="blue-panel">
+                <h1 style='color:white; font-size:42px; line-height:1.2; margin-bottom:20px;'>
+                    Real-time Clinical, Financial, and Compliance Integrity
+                </h1>
+                <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
+                    Preventing risk, fraud, and revenue leakage through continuous data validation.
+                </p>
+                <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
+                    <h2 style='color:white;'>ComplyWise Flow Intelligence</h2>
+                    <p style='font-size:18px; color:#d9e6ff;'>
+                        Data → Processing → Insights → Secure Flow → Output
+                    </p>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
 
     # --- RIGHT SIDE: BLUE INFO PANEL ---
     with col_right:
