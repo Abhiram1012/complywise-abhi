@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import random
 import time
+from snowflake.snowpark import Session
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION
@@ -16,11 +17,18 @@ st.set_page_config(
 # 2. SNOWFLAKE SESSION
 # ---------------------------------------------------------
 def get_snowflake_session():
-    try:
-        from snowflake.snowpark.context import get_active_session
-        return get_active_session()
-    except Exception:
-        return st.connection("snowflake").session()
+
+    connection_parameters = {
+        "account": st.secrets["snowflake"]["BSKPNCS-SGB36220"],
+        "user": st.secrets["snowflake"]["ABHIC"],
+        "password": st.secrets["snowflake"]["Abhiram8074670349"],
+        "warehouse": st.secrets["snowflake"]["compute_wh"],
+        "database": st.secrets["snowflake"]["ML_DATASETS"],
+        "schema": st.secrets["snowflake"]["DATA"],
+        "role": st.secrets["snowflake"]["accountadmin"]
+    }
+
+    return Session.builder.configs(connection_parameters).create()
 
 # ---------------------------------------------------------
 # 3. SESSION STATE
@@ -48,9 +56,11 @@ def get_base64_of_bin_file(bin_file):
         return ""
 
 def send_snowflake_email(target_email, otp_code):
+
     session = get_snowflake_session()
 
     subject = "ComplyWise Password Reset OTP"
+
     body = f"""
 Your ComplyWise verification code is: {otp_code}
 
@@ -58,6 +68,7 @@ This OTP is valid for 10 minutes.
 """
 
     try:
+
         sql_command = f"""
         CALL SYSTEM$SEND_EMAIL(
             'MY_EMAIL_INT',
@@ -68,6 +79,7 @@ This OTP is valid for 10 minutes.
         """
 
         session.sql(sql_command).collect()
+
         return True
 
     except Exception as e:
@@ -84,6 +96,7 @@ def show_login_page():
     st.markdown(
         f"""
         <style>
+
         [data-testid="stHeader"] {{
             visibility: hidden;
             display: none !important;
@@ -122,6 +135,7 @@ def show_login_page():
             flex-direction: column;
             justify-content: center;
         }}
+
         </style>
         """,
         unsafe_allow_html=True
@@ -189,9 +203,13 @@ def show_login_page():
                 result = session.sql(query).collect()
 
                 if len(result) > 0:
+
                     st.session_state.logged_in = True
+
                     st.success("Login Successful")
+
                     time.sleep(1)
+
                     st.rerun()
 
                 else:
@@ -204,7 +222,9 @@ def show_login_page():
 
             st.subheader("Reset Password")
 
-            # STEP 1
+            # ---------------------------------------------------------
+            # STEP 1 - VERIFY EMAIL
+            # ---------------------------------------------------------
             if st.session_state.reset_step == "verify_user":
 
                 email_target = st.text_input(
@@ -242,12 +262,15 @@ def show_login_page():
                                 st.success("OTP Sent Successfully")
 
                                 st.session_state.reset_step = "enter_otp"
+
                                 st.rerun()
 
                     else:
                         st.error("Email not found")
 
-            # STEP 2
+            # ---------------------------------------------------------
+            # STEP 2 - VERIFY OTP
+            # ---------------------------------------------------------
             elif st.session_state.reset_step == "enter_otp":
 
                 st.info(
@@ -270,12 +293,15 @@ def show_login_page():
                         st.success("OTP Verified")
 
                         st.session_state.reset_step = "new_password"
+
                         st.rerun()
 
                     else:
                         st.error("Incorrect OTP")
 
-            # STEP 3
+            # ---------------------------------------------------------
+            # STEP 3 - UPDATE PASSWORD
+            # ---------------------------------------------------------
             elif st.session_state.reset_step == "new_password":
 
                 new_p = st.text_input(
@@ -313,12 +339,16 @@ def show_login_page():
                         st.session_state.view = "login"
                         st.session_state.reset_step = "verify_user"
                         st.session_state.otp_code = None
+                        st.session_state.target_email = None
 
                         st.rerun()
 
                     else:
                         st.error("Passwords do not match")
 
+            # ---------------------------------------------------------
+            # BACK BUTTON
+            # ---------------------------------------------------------
             if st.button("← Back to Login"):
 
                 st.session_state.view = "login"
@@ -337,6 +367,7 @@ def show_login_page():
             """
             <div class="blue-panel">
                 <h1>ComplyWise Integrity</h1>
+
                 <p>
                     Continuous data validation and
                     risk prevention.
