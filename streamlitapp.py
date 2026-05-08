@@ -34,44 +34,42 @@ USER_DATABASE = [
 # 4. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # FINAL CSS OVERRIDE
+    # Targeted CSS to remove all top boxes and fix alignment
     st.markdown("""
         <style>
-        /* 1. Hide the global Streamlit header */
+        /* 1. COMPLETELY HIDE THE TOP WHITE BAR (Streamlit Header) */
         header, [data-testid="stHeader"] {
+            visibility: hidden;
+            height: 0% !important;
             display: none !important;
         }
-
-        /* 2. Remove padding from the very top of the app */
+        
+        /* 2. REMOVE TOP PADDING FROM THE APP CONTAINER */
         .block-container {
-            padding-top: 0rem !important;
+            padding-top: 1rem !important;
+            margin-top: 0rem !important;
         }
 
         .stApp {
             background-color: #f4f7f9;
         }
 
-        /* 3. The Card: Ensure it has no extra top margin */
+        /* 3. LOGIN CARD FIX */
         .login-card {
             background-color: white;
-            padding: 20px 45px 45px 45px;
+            padding: 40px;
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
-            margin-top: 10px; /* Adjust this to move the whole card up/down */
+            margin-top: 0px; /* Reset this */
         }
 
-        /* 4. THE FIX: Target the specific image container to remove the top gap */
-        [data-testid="stImage"] > img {
-            margin-top: -60px !important; /* Adjust this number until the box disappears */
-            clip-path: inset(60px 0 0 0); /* This hides the top 60px of the image if it's white space */
-        }
-        
-        /* Ensure the container doesn't show the white background of the image */
+        /* 4. LOGO ALIGNMENT */
         [data-testid="stImage"] {
-            background: transparent !important;
+            margin-top: -10px !important;
         }
 
+        /* 5. BLUE PANEL FIX (Removed the margin that caused it to drop) */
         .blue-panel {
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
@@ -83,6 +81,7 @@ def show_login_page():
             flex-direction: column;
             justify-content: center;
             box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+            margin-top: 0px; /* Fixed: reset to 0 to align with top */
         }
 
         div.stButton > button:first-child {
@@ -103,11 +102,12 @@ def show_login_page():
         # Display Logo
         st.image(get_logo(), width=280)
         
-        # Space between logo and text
-        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
+        # Spacer
+        st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
+            
             input_user = st.text_input("User ID", placeholder="Enter Username").strip()
             input_pass = st.text_input("Password", type="password", placeholder="Enter Password").strip()
 
@@ -144,14 +144,21 @@ def show_login_page():
                 <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
                     Preventing risk, fraud, and revenue leakage through continuous data validation.
                 </p>
+                <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
+                    <h2 style='color:white;'>ComplyWise Flow Intelligence</h2>
+                    <p style='font-size:18px; color:#d9e6ff;'>
+                        Data → Processing → Insights → Secure Flow → Output
+                    </p>
+                </div>
             </div>
         """, unsafe_allow_html=True)
 
 # ---------------------------------------------------------
-# 5. UI: MAIN APPLICATION
+# 5. UI: MAIN APPLICATION (POST-LOGIN)
 # ---------------------------------------------------------
 def show_main_app():
     st.title("❄️ ComplyWise Dashboard")
+    st.success(f"Welcome back, {st.session_state.current_user}!")
     if st.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
