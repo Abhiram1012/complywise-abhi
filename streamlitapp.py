@@ -16,11 +16,23 @@ st.set_page_config(
 # 2. SESSION INITIALIZATION
 # ---------------------------------------------------------
 def get_snowflake_session():
+    """
+    Handles connection for both Snowflake Native (SiS) 
+    and Streamlit Cloud environments.
+    """
+    # 1. Try Snowflake Native Environment (SiS)
     try:
         from snowflake.snowpark.context import get_active_session
         return get_active_session()
-    except:
-        return st.connection("snowflake").session()
+    except (ImportError, ModuleNotFoundError):
+        # 2. Fallback to Streamlit Cloud Connection
+        try:
+            # This requires snowflake-snowpark-python in requirements.txt
+            # and secrets configured in the Streamlit Cloud Dashboard
+            return st.connection("snowflake").session()
+        except Exception as e:
+            st.error(f"Connection Error: Please ensure snowflake-snowpark-python is in requirements.txt and secrets are set. Error: {e}")
+            return None
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -44,6 +56,8 @@ def get_base64_of_bin_file(bin_file):
 
 def send_snowflake_email(target_email, otp_code):
     session = get_snowflake_session()
+    if not session: return False
+    
     subject = "ComplyWise Password Reset OTP"
     body = f"Your ComplyWise verification code is: {otp_code}. It is valid for 10 minutes."
     try:
@@ -95,20 +109,20 @@ def show_login_page():
                     st.session_state.reset_step = "verify_user"
                     st.rerun()
 
-            if st.button("Sign In", type="primary", use_container_width=True):
+            if st.button("Sign In", key="login_btn", type="primary", use_container_width=True):
                 session = get_snowflake_session()
-                # Searches both USERID and EMAIL columns for a match
-                user_record = session.sql(f"""
-                    SELECT * FROM ML_DATASETS.DATA.COMPLYWISE_USERS 
-                    WHERE (USERID = '{u_input.strip()}' OR EMAIL = '{u_input.strip()}') 
-                    AND PASSWORD = '{u_pass}'
-                """).collect()
+                if session:
+                    user_record = session.sql(f"""
+                        SELECT * FROM ML_DATASETS.DATA.COMPLYWISE_USERS 
+                        WHERE (USERID = '{u_input.strip()}' OR EMAIL = '{u_input.strip()}') 
+                        AND PASSWORD = '{u_pass}'
+                    """).collect()
 
-                if len(user_record) > 0:
-                    st.session_state.logged_in = True
-                    st.rerun()
-                else:
-                    st.error("Invalid credentials")
+                    if len(user_record) > 0:
+                        st.session_state.logged_in = True
+                        st.rerun()
+                    else:
+                        st.error("Invalid credentials")
 
         # --- VIEW: FORGOT PASSWORD ---
         elif st.session_state.view == "forgot":
@@ -118,19 +132,19 @@ def show_login_page():
                 email_target = st.text_input("Enter Registered Email", placeholder="email@example.com")
                 if st.button("Send OTP", type="primary", use_container_width=True):
                     session = get_snowflake_session()
-                    # Check if email exists in the EMAIL column
-                    exists = session.sql(f"SELECT 1 FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE EMAIL = '{email_target.strip()}'").collect()
-                    
-                    if len(exists) > 0:
-                        otp = str(random.randint(1000, 9999))
-                        st.session_state.otp_code = otp
-                        st.session_state.target_email = email_target
-                        with st.spinner("Sending OTP..."):
-                            if send_snowflake_email(email_target, otp):
-                                st.session_state.reset_step = "enter_otp"
-                                st.rerun()
-                    else:
-                        st.error("Email not found in database")
+                    if session:
+                        exists = session.sql(f"SELECT 1 FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE EMAIL = '{email_target.strip()}'").collect()
+                        
+                        if len(exists) > 0:
+                            otp = str(random.randint(1000, 9999))
+                            st.session_state.otp_code = otp
+                            st.session_state.target_email = email_target
+                            with st.spinner("Sending OTP via Snowflake..."):
+                                if send_snowflake_email(email_target, otp):
+                                    st.session_state.reset_step = "enter_otp"
+                                    st.rerun()
+                        else:
+                            st.error("Email not found in database")
 
             elif st.session_state.reset_step == "enter_otp":
                 st.write(f"OTP sent to: **{st.session_state.target_email}**")
@@ -148,16 +162,16 @@ def show_login_page():
                 if st.button("Update Password", type="primary", use_container_width=True):
                     if new_p == conf_p and new_p != "":
                         session = get_snowflake_session()
-                        # Updates the password for the specific EMAIL
-                        session.sql(f"""
-                            UPDATE ML_DATASETS.DATA.COMPLYWISE_USERS 
-                            SET PASSWORD = '{new_p}' 
-                            WHERE EMAIL = '{st.session_state.target_email}'
-                        """).collect()
-                        st.success("Password Updated!")
-                        time.sleep(1.5)
-                        st.session_state.view = "login"
-                        st.rerun()
+                        if session:
+                            session.sql(f"""
+                                UPDATE ML_DATASETS.DATA.COMPLYWISE_USERS 
+                                SET PASSWORD = '{new_p}' 
+                                WHERE EMAIL = '{st.session_state.target_email}'
+                            """).collect()
+                            st.success("Password Updated!")
+                            time.sleep(1.5)
+                            st.session_state.view = "login"
+                            st.rerun()
                     else:
                         st.error("Passwords do not match")
 
