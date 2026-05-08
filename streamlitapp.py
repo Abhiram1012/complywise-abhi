@@ -30,8 +30,8 @@ if "reset_step" not in st.session_state:
     st.session_state.reset_step = "verify_user"
 if "otp_code" not in st.session_state:
     st.session_state.otp_code = None
-if "target_user" not in st.session_state:
-    st.session_state.target_user = None
+if "target_email" not in st.session_state:
+    st.session_state.target_email = None
 
 # ---------------------------------------------------------
 # 3. HELPER FUNCTIONS
@@ -43,21 +43,11 @@ def get_base64_of_bin_file(bin_file):
     except: return ""
 
 def send_snowflake_email(target_email, otp_code):
-    """Calls Snowflake's built-in email procedure"""
     session = get_snowflake_session()
     subject = "ComplyWise Password Reset OTP"
     body = f"Your ComplyWise verification code is: {otp_code}. It is valid for 10 minutes."
-    
     try:
-        # Using the integration you just created
-        session.sql(f"""
-            CALL SYSTEM$SEND_EMAIL(
-                'MY_EMAIL_INT',
-                '{target_email}',
-                '{subject}',
-                '{body}'
-            )
-        """).collect()
+        session.sql(f"CALL SYSTEM$SEND_EMAIL('MY_EMAIL_INT', '{target_email.strip()}', '{subject}', '{body}')").collect()
         return True
     except Exception as e:
         st.error(f"Snowflake Email Error: {e}")
@@ -75,23 +65,14 @@ def show_login_page():
         .block-container {{ padding-top: 2rem !important; }}
         .stApp {{ background-color: #f4f7f9; }}
         .login-card {{
-            background-color: white;
-            padding: 40px;
-            border-radius: 15px;
-            border: 1px solid #e0e6ed;
-            box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
+            background-color: white; padding: 40px; border-radius: 15px;
+            border: 1px solid #e0e6ed; box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
         }}
         .custom-logo {{ width: 280px; margin-bottom: 25px; display: block; }}
         .blue-panel {{
-            background-color: #004a99;
-            background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
-            padding: 60px 50px;
-            border-radius: 20px;
-            color: white;
-            min-height: 520px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            background-color: #004a99; background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
+            padding: 60px 50px; border-radius: 20px; color: white; min-height: 520px;
+            display: flex; flex-direction: column; justify-content: center;
         }}
         </style>
     """, unsafe_allow_html=True)
@@ -101,9 +82,10 @@ def show_login_page():
     with col_left:
         st.markdown(f'''<div class="login-card"><img src="data:image/jpeg;base64,{logo_base64}" class="custom-logo">''', unsafe_allow_html=True)
 
+        # --- VIEW: LOGIN ---
         if st.session_state.view == "login":
             st.subheader("Sign In")
-            u_id = st.text_input("User ID", placeholder="Enter Username")
+            u_input = st.text_input("User ID or Email", placeholder="Enter ID or Email")
             u_pass = st.text_input("Password", type="password", placeholder="Enter Password")
 
             c1, c2 = st.columns([1.5, 1])
@@ -114,31 +96,44 @@ def show_login_page():
                     st.rerun()
 
             if st.button("Sign In", type="primary", use_container_width=True):
-                if u_id == "admin" and u_pass == "admin123":
+                session = get_snowflake_session()
+                # Searches both USERID and EMAIL columns for a match
+                user_record = session.sql(f"""
+                    SELECT * FROM ML_DATASETS.DATA.COMPLYWISE_USERS 
+                    WHERE (USERID = '{u_input.strip()}' OR EMAIL = '{u_input.strip()}') 
+                    AND PASSWORD = '{u_pass}'
+                """).collect()
+
+                if len(user_record) > 0:
                     st.session_state.logged_in = True
                     st.rerun()
                 else:
                     st.error("Invalid credentials")
 
+        # --- VIEW: FORGOT PASSWORD ---
         elif st.session_state.view == "forgot":
             st.subheader("Reset Password")
             
             if st.session_state.reset_step == "verify_user":
-                target = st.text_input("Enter Registered Email", placeholder="email@example.com")
+                email_target = st.text_input("Enter Registered Email", placeholder="email@example.com")
                 if st.button("Send OTP", type="primary", use_container_width=True):
-                    otp = str(random.randint(1000, 9999))
-                    st.session_state.otp_code = otp
-                    st.session_state.target_user = target
+                    session = get_snowflake_session()
+                    # Check if email exists in the EMAIL column
+                    exists = session.sql(f"SELECT 1 FROM ML_DATASETS.DATA.COMPLYWISE_USERS WHERE EMAIL = '{email_target.strip()}'").collect()
                     
-                    with st.spinner("Snowflake is sending your email..."):
-                        if send_snowflake_email(target, otp):
-                            st.session_state.reset_step = "enter_otp"
-                            st.success(f"OTP sent to {target}")
-                            time.sleep(1)
-                            st.rerun()
+                    if len(exists) > 0:
+                        otp = str(random.randint(1000, 9999))
+                        st.session_state.otp_code = otp
+                        st.session_state.target_email = email_target
+                        with st.spinner("Sending OTP..."):
+                            if send_snowflake_email(email_target, otp):
+                                st.session_state.reset_step = "enter_otp"
+                                st.rerun()
+                    else:
+                        st.error("Email not found in database")
 
             elif st.session_state.reset_step == "enter_otp":
-                st.write(f"OTP sent for user: **{st.session_state.target_user}**")
+                st.write(f"OTP sent to: **{st.session_state.target_email}**")
                 otp_in = st.text_input("Enter 4-Digit OTP", placeholder="0000")
                 if st.button("Verify OTP", type="primary", use_container_width=True):
                     if otp_in == st.session_state.otp_code:
@@ -152,7 +147,14 @@ def show_login_page():
                 conf_p = st.text_input("Confirm Password", type="password")
                 if st.button("Update Password", type="primary", use_container_width=True):
                     if new_p == conf_p and new_p != "":
-                        st.success("Password Updated Successfully!")
+                        session = get_snowflake_session()
+                        # Updates the password for the specific EMAIL
+                        session.sql(f"""
+                            UPDATE ML_DATASETS.DATA.COMPLYWISE_USERS 
+                            SET PASSWORD = '{new_p}' 
+                            WHERE EMAIL = '{st.session_state.target_email}'
+                        """).collect()
+                        st.success("Password Updated!")
                         time.sleep(1.5)
                         st.session_state.view = "login"
                         st.rerun()
@@ -175,6 +177,7 @@ if not st.session_state.logged_in:
     show_login_page()
 else:
     st.title("Main Dashboard")
+    st.success("Successfully Authenticated")
     if st.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
