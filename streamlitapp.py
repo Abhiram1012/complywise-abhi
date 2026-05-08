@@ -34,38 +34,42 @@ USER_DATABASE = [
 # 4. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # ULTIMATE CSS FIX for the top white box
+    # FINAL CSS OVERRIDE
     st.markdown("""
         <style>
-        /* 1. COMPLETELY WIPE THE TOP HEADER AREA */
-        [data-testid="stHeader"] {
+        /* 1. Hide the global Streamlit header */
+        header, [data-testid="stHeader"] {
             display: none !important;
-            height: 0px !important;
         }
-        
-        /* 2. REMOVE ALL PADDING FROM THE TOP OF THE PAGE */
+
+        /* 2. Remove padding from the very top of the app */
         .block-container {
             padding-top: 0rem !important;
-            margin-top: -20px !important;
         }
 
         .stApp {
             background-color: #f4f7f9;
         }
 
-        /* 3. LOGIN CARD FIXes */
+        /* 3. The Card: Ensure it has no extra top margin */
         .login-card {
             background-color: white;
-            padding: 30px 45px 45px 45px;
+            padding: 20px 45px 45px 45px;
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
-            margin-top: 20px;
+            margin-top: 10px; /* Adjust this to move the whole card up/down */
         }
 
-        /* 4. PIN LOGO TO TOP OF CARD */
+        /* 4. THE FIX: Target the specific image container to remove the top gap */
+        [data-testid="stImage"] > img {
+            margin-top: -60px !important; /* Adjust this number until the box disappears */
+            clip-path: inset(60px 0 0 0); /* This hides the top 60px of the image if it's white space */
+        }
+        
+        /* Ensure the container doesn't show the white background of the image */
         [data-testid="stImage"] {
-            margin-top: -15px !important;
+            background: transparent !important;
         }
 
         .blue-panel {
@@ -79,7 +83,6 @@ def show_login_page():
             flex-direction: column;
             justify-content: center;
             box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
-            margin-top: 20px;
         }
 
         div.stButton > button:first-child {
@@ -95,18 +98,16 @@ def show_login_page():
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
-        # Open card
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
         # Display Logo
         st.image(get_logo(), width=280)
         
-        # Spacer
-        st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
+        # Space between logo and text
+        st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
-            
             input_user = st.text_input("User ID", placeholder="Enter Username").strip()
             input_pass = st.text_input("Password", type="password", placeholder="Enter Password").strip()
 
@@ -132,7 +133,6 @@ def show_login_page():
                 st.session_state.view = "login"
                 st.rerun()
         
-        # Close card
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
@@ -144,12 +144,6 @@ def show_login_page():
                 <p style='color:#e0e0e0; font-size:20px; line-height:1.6; font-style: italic;'>
                     Preventing risk, fraud, and revenue leakage through continuous data validation.
                 </p>
-                <div style="margin-top:60px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 40px; text-align:center;">
-                    <h2 style='color:white;'>ComplyWise Flow Intelligence</h2>
-                    <p style='font-size:18px; color:#d9e6ff;'>
-                        Data → Processing → Insights → Secure Flow → Output
-                    </p>
-                </div>
             </div>
         """, unsafe_allow_html=True)
 
