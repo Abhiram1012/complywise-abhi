@@ -34,16 +34,16 @@ USER_DATABASE = [
 # 4. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # Targeted CSS to remove the empty space at the top of the card
+    # Targeted CSS to remove that top white box inside the card
     st.markdown("""
         <style>
-        /* 1. Hide the global Streamlit header */
+        /* 1. Hide Streamlit's default top toolbar */
         header, [data-testid="stHeader"] {
             visibility: hidden;
             display: none !important;
         }
         
-        /* 2. Remove padding from the very top of the app */
+        /* 2. Pull the whole app content up */
         .block-container {
             padding-top: 2rem !important;
         }
@@ -52,23 +52,30 @@ def show_login_page():
             background-color: #f4f7f9;
         }
 
-        /* 3. The Login Card: Reducing TOP PADDING from 40px to 15px */
+        /* 3. LOGIN CARD: Reduced top padding to 10px */
         .login-card {
             background-color: white;
-            padding: 15px 45px 45px 45px; 
+            padding: 10px 45px 45px 45px; 
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
             margin-top: 0px;
         }
 
-        /* 4. Targeting the Logo: Removing Streamlit's default top margin */
+        /* 4. THE FIX: Pull the image up into the empty space */
         [data-testid="stImage"] {
-            margin-top: -10px !important;
-            margin-bottom: 0px !important;
+            margin-top: -25px !important;
+            margin-bottom: -10px !important;
+        }
+        
+        /* Remove any potential ghost margins from the column */
+        [data-testid="column"] {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
 
-        /* 5. The Blue Panel: Ensuring it stays aligned with the card */
+        /* 5. BLUE PANEL: Stay aligned with card */
         .blue-panel {
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
@@ -96,13 +103,13 @@ def show_login_page():
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
-        # Start the card
+        # Open card
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        # Display Logo (sitting tight at the top now)
+        # Logo - it will now sit at the very top of the card
         st.image(get_logo(), width=280)
         
-        # Small spacer after logo
+        # Clean spacer between logo and "Sign In"
         st.markdown("<div style='margin-bottom: 20px;'></div>", unsafe_allow_html=True)
 
         if st.session_state.view == "login":
@@ -133,7 +140,7 @@ def show_login_page():
                 st.session_state.view = "login"
                 st.rerun()
         
-        # Close the card
+        # Close card
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
@@ -159,7 +166,6 @@ def show_login_page():
 # ---------------------------------------------------------
 def show_main_app():
     st.title("❄️ ComplyWise Dashboard")
-    st.success(f"Welcome back, {st.session_state.current_user}!")
     if st.button("Log Out"):
         st.session_state.logged_in = False
         st.rerun()
