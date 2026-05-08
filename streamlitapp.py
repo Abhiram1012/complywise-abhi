@@ -1,7 +1,7 @@
 import streamlit as st
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION (Must be at the very top)
+# 1. PAGE CONFIGURATION (Must be the very first Streamlit command)
 # ---------------------------------------------------------
 st.set_page_config(
     layout="wide",
@@ -34,17 +34,17 @@ USER_DATABASE = [
 # 4. UI: LOGIN PAGE
 # ---------------------------------------------------------
 def show_login_page():
-    # Targeted CSS to remove empty boxes and ghost spacing
+    # Targeted CSS to remove the top box and align the logo
     st.markdown("""
         <style>
-        /* 1. Remove the empty white box (Streamlit Header) at the top */
-        header, [data-testid="stHeader"] {
+        /* 1. Hide the main Streamlit header/toolbar (the source of the empty box) */
+        [data-testid="stHeader"] {
             display: none !important;
         }
         
-        /* 2. Remove default padding from the main block */
+        /* 2. Adjust the main container padding */
         .block-container {
-            padding-top: 2rem !important;
+            padding-top: 3rem !important;
         }
 
         .stApp {
@@ -54,18 +54,20 @@ def show_login_page():
         /* 3. Login Card Styling */
         .login-card {
             background-color: white;
-            padding: 40px;
+            padding: 30px 45px 45px 45px;
             border-radius: 15px;
             border: 1px solid #e0e6ed;
             box-shadow: 0px 10px 25px rgba(0,0,0,0.05);
+            margin-top: 10px;
         }
 
-        /* 4. Pull Logo to the top and remove its bottom margin */
+        /* 4. Force the logo to sit at the top of the card */
         [data-testid="stImage"] {
-            margin-top: -10px;
-            margin-bottom: -20px;
+            margin-top: -10px !important;
+            margin-bottom: 0px !important;
         }
 
+        /* 5. Blue Panel Styling */
         .blue-panel {
             background-color: #004a99;
             background-image: linear-gradient(160deg, #004a99 0%, #002d5c 100%);
@@ -79,6 +81,7 @@ def show_login_page():
             box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
         }
 
+        /* Button & Input Styling */
         div.stButton > button:first-child {
             background-color: #007bff;
             color: white;
@@ -92,14 +95,14 @@ def show_login_page():
     col_left, col_right = st.columns([1, 1.2], gap="large")
 
     with col_left:
-        # The wrapper div for our card
+        # Start the card div
         st.markdown('<div class="login-card">', unsafe_allow_html=True)
         
-        # Display Logo
+        # Display Logo immediately at the top of the card
         st.image(get_logo(), width=280)
         
-        # Smaller vertical spacer
-        st.markdown("<div style='margin-bottom: 30px;'></div>", unsafe_allow_html=True)
+        # Fixed spacer (no ## which adds huge margins)
+        st.markdown("<div style='margin-bottom: 25px;'></div>", unsafe_allow_html=True)
 
         if st.session_state.view == "login":
             st.subheader("Sign In")
@@ -129,6 +132,7 @@ def show_login_page():
                 st.session_state.view = "login"
                 st.rerun()
         
+        # Close the card div
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
