@@ -23,7 +23,7 @@ if "current_user" not in st.session_state:
 # 3. ASSETS & DATABASE
 # ---------------------------------------------------------
 def get_logo():
-    return "comply logo.jpgg"
+    return "comply logo.jpg"
 
 USER_DATABASE = [
     {"userid": "admin", "password": "admin123"},
